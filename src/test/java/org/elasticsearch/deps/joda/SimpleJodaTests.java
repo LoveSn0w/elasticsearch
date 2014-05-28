@@ -567,7 +567,7 @@ public class SimpleJodaTests extends ElasticsearchTestCase {
             FormatDateTimeFormatter formatter = Joda.forPattern(pattern);
             DateTimeFormatter parser = formatter.parser();
             parser.parseMillis(invalidDate);
-            fail(String.format("Expected parsing exception for pattern [%s] with date [%s], but did not happen", pattern, invalidDate));
+            fail(String.format(Locale.ROOT, "Expected parsing exception for pattern [%s] with date [%s], but did not happen", pattern, invalidDate));
         } catch (IllegalArgumentException e) {
         }
     }
