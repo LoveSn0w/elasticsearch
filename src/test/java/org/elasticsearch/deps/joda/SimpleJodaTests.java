@@ -22,6 +22,8 @@ package org.elasticsearch.deps.joda;
 import org.elasticsearch.common.joda.FormatDateTimeFormatter;
 import org.elasticsearch.common.joda.Joda;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.mapper.core.DateFieldMapper;
+import org.elasticsearch.index.mapper.object.RootObjectMapper;
 import org.elasticsearch.test.ElasticsearchTestCase;
 import org.joda.time.DateTimeFieldType;
 import org.joda.time.DateTimeZone;
@@ -551,6 +553,41 @@ public class SimpleJodaTests extends ElasticsearchTestCase {
         assertValidDateFormatParsing("yearMonthDay", "2014-05-5", "2014-05-05");
         assertValidDateFormatParsing("strictYearMonthDay", "2014-12-12");
         assertDateFormatParsingThrowingException("strictYearMonthDay", "2014-05-5");
+    }
+
+    @Test
+    public void testThatRootObjectParsingIsStrict() throws Exception {
+        String[] datesThatWork = new String[] { "2014/10/10", "2014/10/10 12:12:12", "2014-05-05",  "2014-05-05T12:12:12.123Z" };
+        String[] datesThatShouldNotWork = new String[]{ "5-05-05", "2014-5-05", "2014-05-5",
+                "2014-05-05T1:12:12.123Z", "2014-05-05T12:1:12.123Z", "2014-05-05T12:12:1.123Z",
+                "4/10/10", "2014/1/10", "2014/10/1",
+                "2014/10/10 1:12:12", "2014/10/10 12:1:12", "2014/10/10 12:12:1"
+        };
+
+        // good case
+        for (String date : datesThatWork) {
+            boolean dateParsingSuccessful = false;
+            for (FormatDateTimeFormatter dateTimeFormatter : RootObjectMapper.Defaults.DYNAMIC_DATE_TIME_FORMATTERS) {
+                try {
+                    dateTimeFormatter.parser().parseMillis(date);
+                    dateParsingSuccessful = true;
+                    break;
+                } catch (Exception e) {}
+            }
+            if (!dateParsingSuccessful) {
+                fail("Parsing for date " + date + " in root object mapper failed, but shouldnt");
+            }
+        }
+
+        // bad case
+        for (String date : datesThatShouldNotWork) {
+            for (FormatDateTimeFormatter dateTimeFormatter : RootObjectMapper.Defaults.DYNAMIC_DATE_TIME_FORMATTERS) {
+                try {
+                    dateTimeFormatter.parser().parseMillis(date);
+                    fail(String.format(Locale.ROOT, "Expected exception when parsing date %s in root mapper", date));
+                } catch (Exception e) {}
+            }
+        }
     }
 
     private void assertValidDateFormatParsing(String pattern, String dateToParse) {

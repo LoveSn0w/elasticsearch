@@ -237,6 +237,38 @@ public class Joda {
         return new FormatDateTimeFormatter(input, formatter.withZone(DateTimeZone.UTC), locale);
     }
 
+    public static FormatDateTimeFormatter getStrictStandardDateFormater() {
+        // 2014/10/10
+        DateTimeFormatter shortFormatter = new DateTimeFormatterBuilder()
+                .appendFixedDecimal(DateTimeFieldType.year(), 4)
+                .appendLiteral('/')
+                .appendFixedDecimal(DateTimeFieldType.monthOfYear(), 2)
+                .appendLiteral('/')
+                .appendFixedDecimal(DateTimeFieldType.dayOfMonth(), 2)
+                .toFormatter()
+                .withZoneUTC();
+
+        // 2014/10/10 12:12:12
+        DateTimeFormatter longFormatter = new DateTimeFormatterBuilder()
+                .appendFixedDecimal(DateTimeFieldType.year(), 4)
+                .appendLiteral('/')
+                .appendFixedDecimal(DateTimeFieldType.monthOfYear(), 2)
+                .appendLiteral('/')
+                .appendFixedDecimal(DateTimeFieldType.dayOfMonth(), 2)
+                .appendLiteral(' ')
+                .appendFixedSignedDecimal(DateTimeFieldType.hourOfDay(), 2)
+                .appendLiteral(':')
+                .appendFixedSignedDecimal(DateTimeFieldType.minuteOfHour(), 2)
+                .appendLiteral(':')
+                .appendFixedSignedDecimal(DateTimeFieldType.secondOfMinute(), 2)
+                .toFormatter()
+                .withZoneUTC();
+
+        DateTimeFormatterBuilder builder = new DateTimeFormatterBuilder().append(longFormatter.withZone(DateTimeZone.UTC).getPrinter(), new DateTimeParser[] {longFormatter.getParser(), shortFormatter.getParser()});
+
+        return new FormatDateTimeFormatter("yyyy/MM/dd HH:mm:ss||yyyy/MM/dd", builder.toFormatter().withZone(DateTimeZone.UTC), Locale.ROOT);
+    }
+
 
     public static final DurationFieldType Quarters = new DurationFieldType("quarters") {
         private static final long serialVersionUID = -8167713675442491871L;
