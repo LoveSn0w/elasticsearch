@@ -201,6 +201,17 @@ year, and two digit day of month.
 |=======================================================================
 
 [float]
+[[strict]]
+=== Strict date formats
+
+Most of the above dates have a `strict` companion dates, which means, that
+year, month and day parts of the week must have prepending zeros in order
+to be valid. This means, that a date like `5/11/1` would not be valid, but
+you would need to specify the full date, which would be `2005/11/01` in this
+example. So instead of `dateOptionalTime` you would need to specify
+`strictDateOptionalTime`.
+
+[float]
 [[custom]]
 === Custom Format
 
