@@ -33,6 +33,7 @@ import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.BytesRefBuilder;
 import org.apache.lucene.util.NumericUtils;
 import org.apache.lucene.util.ToStringUtils;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.fieldstats.FieldStats;
 import org.elasticsearch.common.Explicit;
 import org.elasticsearch.common.Nullable;
@@ -76,6 +77,7 @@ public class DateFieldMapper extends NumberFieldMapper {
     public static final String CONTENT_TYPE = "date";
 
     public static class Defaults extends NumberFieldMapper.Defaults {
+        public static final FormatDateTimeFormatter DATE_TIME_FORMATTER_BEFORE_2_0 = Joda.forPattern("dateOptionalTime", Locale.ROOT);
         public static final FormatDateTimeFormatter DATE_TIME_FORMATTER = Joda.forPattern("strictDateOptionalTime", Locale.ROOT);
 
         public static final FieldType FIELD_TYPE = new FieldType(NumberFieldMapper.Defaults.FIELD_TYPE);
@@ -124,6 +126,10 @@ public class DateFieldMapper extends NumberFieldMapper {
         @Override
         public DateFieldMapper build(BuilderContext context) {
             fieldType.setOmitNorms(fieldType.omitNorms() && boost == 1.0f);
+            // index age check
+            if (dateTimeFormatter.equals(Defaults.DATE_TIME_FORMATTER) && context.indexCreatedVersion().before(Version.V_2_0_0)) {
+                dateTimeFormatter = Defaults.DATE_TIME_FORMATTER_BEFORE_2_0;
+            }
             if (!locale.equals(dateTimeFormatter.locale())) {
                 dateTimeFormatter = new FormatDateTimeFormatter(dateTimeFormatter.format(), dateTimeFormatter.parser(), dateTimeFormatter.printer(), locale);
             }

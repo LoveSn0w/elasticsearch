@@ -32,12 +32,7 @@ import org.elasticsearch.common.joda.FormatDateTimeFormatter;
 import org.elasticsearch.common.joda.Joda;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.index.mapper.Mapper;
-import org.elasticsearch.index.mapper.MapperParsingException;
-import org.elasticsearch.index.mapper.MergeMappingException;
-import org.elasticsearch.index.mapper.MergeResult;
-import org.elasticsearch.index.mapper.ParseContext;
-import org.elasticsearch.index.mapper.RootMapper;
+import org.elasticsearch.index.mapper.*;
 import org.elasticsearch.index.mapper.core.DateFieldMapper;
 import org.elasticsearch.index.mapper.core.LongFieldMapper;
 import org.elasticsearch.index.mapper.core.NumberFieldMapper;
@@ -78,6 +73,7 @@ public class TimestampFieldMapper extends DateFieldMapper implements RootMapper 
         public static final EnabledAttributeMapper ENABLED = EnabledAttributeMapper.UNSET_DISABLED;
         public static final String PATH = null;
         public static final FormatDateTimeFormatter DATE_TIME_FORMATTER = Joda.forPattern(DEFAULT_DATE_TIME_FORMAT);
+        public static final FormatDateTimeFormatter DATE_TIME_FORMATTER_BEFORE_2_0 = Joda.forPattern("dateOptionalTime");
         public static final String DEFAULT_TIMESTAMP = "now";
     }
 
@@ -131,9 +127,21 @@ public class TimestampFieldMapper extends DateFieldMapper implements RootMapper 
                 assert fieldType.stored();
                 fieldType.setStored(false);
             }
+            if (dateTimeFormatter.equals(Defaults.DATE_TIME_FORMATTER)) {
+                dateTimeFormatter = getDateTimeFormatter(context.indexSettings());
+            }
             return new TimestampFieldMapper(fieldType, docValues, enabledState, path, dateTimeFormatter, defaultTimestamp,
                     ignoreMissing,
                     ignoreMalformed(context), coerce(context), normsLoading, fieldDataSettings, context.indexSettings());
+        }
+    }
+
+    private static FormatDateTimeFormatter getDateTimeFormatter(Settings indexSettings) {
+        Version indexCreated = Version.indexCreated(indexSettings);
+        if (indexCreated.onOrAfter(Version.V_2_0_0)) {
+            return Defaults.DATE_TIME_FORMATTER;
+        } else {
+            return Defaults.DATE_TIME_FORMATTER_BEFORE_2_0;
         }
     }
 
@@ -202,7 +210,7 @@ public class TimestampFieldMapper extends DateFieldMapper implements RootMapper 
     private final Boolean ignoreMissing;
 
     public TimestampFieldMapper(Settings indexSettings) {
-        this(new FieldType(defaultFieldType(indexSettings)), null, Defaults.ENABLED, Defaults.PATH, Defaults.DATE_TIME_FORMATTER, Defaults.DEFAULT_TIMESTAMP,
+        this(new FieldType(defaultFieldType(indexSettings)), null, Defaults.ENABLED, Defaults.PATH, getDateTimeFormatter(indexSettings), Defaults.DEFAULT_TIMESTAMP,
              null, Defaults.IGNORE_MALFORMED, Defaults.COERCE, null, null, indexSettings);
     }
 

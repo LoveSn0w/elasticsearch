@@ -107,6 +107,7 @@ public class RootObjectMapper extends ObjectMapper {
                 dates = new FormatDateTimeFormatter[0];
             } else if (dynamicDateTimeFormatters.isEmpty()) {
                 // add the default one
+                // TODO: Does this need to have bwc compat as well?
                 dates = Defaults.DYNAMIC_DATE_TIME_FORMATTERS;
             } else {
                 dates = dynamicDateTimeFormatters.toArray(new FormatDateTimeFormatter[dynamicDateTimeFormatters.size()]);

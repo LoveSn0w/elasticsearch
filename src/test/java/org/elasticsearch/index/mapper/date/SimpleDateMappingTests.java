@@ -25,6 +25,8 @@ import org.apache.lucene.index.DocValuesType;
 import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.util.Constants;
+import org.elasticsearch.Version;
+import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.LocaleUtils;
@@ -33,13 +35,8 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.index.IndexService;
-import org.elasticsearch.index.mapper.DocumentMapper;
-import org.elasticsearch.index.mapper.FieldMapper;
-import org.elasticsearch.index.mapper.MapperParsingException;
-import org.elasticsearch.index.mapper.MergeResult;
-import org.elasticsearch.index.mapper.ParseContext;
+import org.elasticsearch.index.mapper.*;
 import org.elasticsearch.index.mapper.ParseContext.Document;
-import org.elasticsearch.index.mapper.ParsedDocument;
 import org.elasticsearch.index.mapper.core.DateFieldMapper;
 import org.elasticsearch.index.mapper.core.LongFieldMapper;
 import org.elasticsearch.index.mapper.core.StringFieldMapper;
@@ -51,21 +48,12 @@ import org.joda.time.DateTimeZone;
 import org.junit.Before;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 import static com.carrotsearch.randomizedtesting.RandomizedTest.systemPropertyAsBoolean;
 import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
 import static org.elasticsearch.index.mapper.string.SimpleStringMappingTests.docValuesType;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.*;
 
 public class SimpleDateMappingTests extends ElasticsearchSingleNodeTest {
     
@@ -438,5 +426,22 @@ public class SimpleDateMappingTests extends ElasticsearchSingleNodeTest {
                 .endObject()
                 .bytes());
         assertThat(getDateAsMillis(doc.rootDoc(), "date_field"), equalTo(44000L));
+    }
+
+    public void testThatOlderIndicesAllowNonStrictDates() throws Exception {
+        String mapping = XContentFactory.jsonBuilder().startObject().startObject("type")
+                .startObject("properties").startObject("date_field").field("type", "date").endObject().endObject()
+                .endObject().endObject().string();
+
+        String indexName = "test-" + randomAsciiOfLength(10).toLowerCase(Locale.ROOT);
+        IndexService index = createIndex(indexName, settingsBuilder().put(IndexMetaData.SETTING_VERSION_CREATED, Version.V_1_5_2_ID).build());
+        client().admin().indices().preparePutMapping(indexName).setType("type").setSource(mapping).get();
+        DocumentMapper defaultMapper = index.mapperService().documentMapper("type");
+
+        defaultMapper.parse("type", "1", XContentFactory.jsonBuilder()
+                .startObject()
+                .field("date_field", "1-1-1T00:00:44.000Z")
+                .endObject()
+                .bytes());
     }
 }

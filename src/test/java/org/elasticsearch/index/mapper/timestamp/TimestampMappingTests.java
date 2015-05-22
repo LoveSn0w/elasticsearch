@@ -37,12 +37,7 @@ import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
-import org.elasticsearch.index.mapper.DocumentMapper;
-import org.elasticsearch.index.mapper.DocumentMapperParser;
-import org.elasticsearch.index.mapper.FieldMapper;
-import org.elasticsearch.index.mapper.MergeResult;
-import org.elasticsearch.index.mapper.ParsedDocument;
-import org.elasticsearch.index.mapper.SourceToParse;
+import org.elasticsearch.index.mapper.*;
 import org.elasticsearch.index.mapper.internal.TimestampFieldMapper;
 import org.elasticsearch.test.ElasticsearchSingleNodeTest;
 import org.junit.Test;
@@ -58,14 +53,7 @@ import static org.elasticsearch.Version.V_1_5_0;
 import static org.elasticsearch.Version.V_2_0_0;
 import static org.elasticsearch.test.VersionUtils.randomVersion;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.isIn;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.*;
 
 /**
  */
@@ -114,7 +102,7 @@ public class TimestampMappingTests extends ElasticsearchSingleNodeTest {
                 assertThat(docMapper.timestampFieldMapper().fieldType().stored(), equalTo(version.onOrAfter(Version.V_2_0_0) ? true : false));
                 assertThat(docMapper.timestampFieldMapper().fieldType().indexOptions(), equalTo(TimestampFieldMapper.Defaults.FIELD_TYPE.indexOptions()));
                 assertThat(docMapper.timestampFieldMapper().path(), equalTo(TimestampFieldMapper.Defaults.PATH));
-                assertThat(docMapper.timestampFieldMapper().dateTimeFormatter().format(), equalTo(TimestampFieldMapper.DEFAULT_DATE_TIME_FORMAT));
+                assertThat(docMapper.timestampFieldMapper().dateTimeFormatter().format(), equalTo(version.onOrAfter(Version.V_2_0_0) ? TimestampFieldMapper.DEFAULT_DATE_TIME_FORMAT : "dateOptionalTime"));
                 assertThat(docMapper.timestampFieldMapper().hasDocValues(), equalTo(false));
                 assertAcked(client().admin().indices().prepareDelete("test").execute().get());
             }
